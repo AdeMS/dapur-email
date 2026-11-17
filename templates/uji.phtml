@@ -1,0 +1,11 @@
+<?php
+/**
+ * Email uji dari perintah `vendor/bin/dapur-email uji <alamat>`.
+ *
+ * @var string $host   komputer atau website yang mengirim
+ * @var string $waktu
+ */
+?>
+<p style="margin:0 0 12px;">Halo,</p>
+<p style="margin:0 0 12px;">Ini email uji dari Dapur AdeMS. Bila Anda menerimanya, pengaturan email sudah benar.</p>
+<p style="margin:0;color:#5c6b63;font-size:13px;">Dikirim dari <?= $this->escapeHtml($this->host) ?> pada <?= $this->escapeHtml($this->waktu) ?>.</p>
