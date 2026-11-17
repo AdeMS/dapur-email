@@ -1,0 +1,47 @@
+{
+    "name": "adems/dapur-email",
+    "description": "Modul email untuk Dapur AdeMS: mengirim email lewat SMTP, dengan template laminas-view",
+    "type": "library",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "dapur",
+        "adems",
+        "laminas",
+        "mezzio",
+        "email",
+        "smtp"
+    ],
+    "homepage": "https://www.adems.id",
+    "authors": [
+        {
+            "name": "Ade M Saragih",
+            "homepage": "https://www.adems.id"
+        }
+    ],
+    "require": {
+        "php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
+        "composer-runtime-api": "^2.0",
+        "mezzio/mezzio-template": "^3.0",
+        "psr/container": "^1.1 || ^2.0",
+        "symfony/mailer": "^7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "AdeMS\\Dapur\\Email\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AdeMS\\Dapur\\Email\\Test\\": "test/"
+        }
+    },
+    "bin": [
+        "bin/dapur-email"
+    ],
+    "scripts": {
+        "test": "phpunit"
+    }
+}
