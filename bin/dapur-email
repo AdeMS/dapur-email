@@ -1,0 +1,85 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Perintah modul email Dapur AdeMS. Jalankan dari folder inti:
+ *
+ *   vendor/bin/dapur-email info            menampilkan pengaturan email (tanpa kata sandi)
+ *   vendor/bin/dapur-email uji <alamat>    mengirim email uji ke alamat itu
+ *
+ * Dengan paket adems/dapur-multiwebsite, tambahkan --website=<domain> untuk memakai pengaturan website tertentu.
+ */
+
+declare(strict_types=1);
+
+use AdeMS\Dapur\Email\GagalKirim;
+use AdeMS\Dapur\Email\Pengaturan;
+use AdeMS\Dapur\Email\PengirimEmail;
+use AdeMS\Dapur\Email\SuratTemplat;
+use Composer\InstalledVersions;
+
+require $GLOBALS['_composer_autoload_path'] ?? dirname(__DIR__, 3) . '/autoload.php';
+
+$argumen = array_values(array_filter(array_slice($argv, 1), static fn (string $a): bool => ! str_starts_with($a, '--')));
+
+try {
+    chdir((string) (realpath(InstalledVersions::getRootPackage()['install_path']) ?: InstalledVersions::getRootPackage()['install_path']));
+
+    $container  = require 'config/container.php';
+    $pengaturan = $container->get(Pengaturan::class);
+    assert($pengaturan instanceof Pengaturan);
+
+    switch ($argumen[0] ?? '') {
+        case 'info':
+            foreach ($pengaturan->ringkasan() as $kunci => $nilai) {
+                printf("%-9s %s%s", $kunci, $nilai, PHP_EOL);
+            }
+
+            $kurang = $pengaturan->kekurangan();
+            echo $kurang === null ? 'Pengaturan lengkap.' . PHP_EOL : 'Belum lengkap: ' . $kurang . PHP_EOL;
+            exit($kurang === null ? 0 : 1);
+
+        case 'uji':
+            $alamat = $argumen[1] ?? '';
+            if (filter_var($alamat, FILTER_VALIDATE_EMAIL) === false) {
+                fwrite(STDERR, 'Pemakaian: dapur-email uji <alamat email>' . PHP_EOL);
+                exit(1);
+            }
+
+            $config = $container->get('config');
+            $pesan  = $container->get(SuratTemplat::class)->buat('email::uji', [
+                'host'  => (string) ($config['website']['host'] ?? gethostname()),
+                'waktu' => date('Y-m-d H:i T'),
+            ], $alamat, 'Email uji Dapur AdeMS');
+
+            $container->get(PengirimEmail::class)->kirim($pesan);
+            printf(
+                $pengaturan->cara === Pengaturan::FILE ? "Email uji ditulis ke folder %s.%s" : "Email uji dikirim ke %s.%s",
+                $pengaturan->cara === Pengaturan::FILE ? $pengaturan->folder : $alamat,
+                PHP_EOL,
+            );
+            exit(0);
+
+        default:
+            echo <<<BANTUAN
+                Pemakaian: dapur-email <perintah>
+
+                  info             Menampilkan pengaturan email (tanpa kata sandi)
+                  uji <alamat>     Mengirim email uji ke alamat itu
+
+                Dengan paket adems/dapur-multiwebsite, tambahkan --website=<domain> untuk website tertentu.
+
+                BANTUAN;
+            exit(($argumen[0] ?? '') === '' ? 0 : 1);
+    }
+} catch (GagalKirim $e) {
+    fwrite(STDERR, 'Gagal mengirim: ' . $e->getMessage() . PHP_EOL);
+    exit(1);
+} catch (Throwable $e) {
+    while ($e->getPrevious() !== null) {
+        $e = $e->getPrevious();
+    }
+
+    fwrite(STDERR, 'Gagal: ' . $e->getMessage() . PHP_EOL);
+    exit(1);
+}
